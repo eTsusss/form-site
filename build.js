@@ -13,6 +13,13 @@ if (!accessKey) {
   process.exit(1);
 }
 
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+if (!uuidPattern.test(accessKey.trim())) {
+  console.error('Ошибка: WEB3FORMS_ACCESS_KEY должен быть UUID вида xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx');
+  console.error('Сейчас указано:', JSON.stringify(accessKey));
+  process.exit(1);
+}
+
 if (fs.existsSync(distDir)) {
   fs.rmSync(distDir, { recursive: true });
 }
@@ -23,7 +30,7 @@ for (const file of fs.readdirSync(publicDir)) {
   fs.copyFileSync(path.join(publicDir, file), path.join(distDir, file));
 }
 
-const configJs = `window.WEB3FORMS_ACCESS_KEY = ${JSON.stringify(accessKey)};\n`;
+const configJs = `window.WEB3FORMS_ACCESS_KEY = ${JSON.stringify(accessKey.trim())};\n`;
 fs.writeFileSync(path.join(distDir, 'config.js'), configJs);
 
 console.log('Сборка завершена: папка dist/ готова');

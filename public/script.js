@@ -60,7 +60,11 @@ async function sendViaWeb3Forms(formData, accessKey) {
 
   const result = await response.json().catch(() => ({}));
   if (!response.ok || !result.success) {
-    throw new Error(result.message || 'Проверьте ключ Web3Forms и домен сайта');
+    const errorMessage =
+      result.message ||
+      result.body?.message ||
+      (response.status === 400 ? 'Неверный ключ или домен не добавлен в Web3Forms' : null);
+    throw new Error(errorMessage || 'Не удалось отправить заявку');
   }
 }
 

@@ -67,14 +67,28 @@ Render Dashboard → старый сервис `form-site` → **Settings → De
 
 ### Шаг 3. Обновите домен в Web3Forms
 
-1. Откройте [web3forms.com](https://web3forms.com) → ваша форма
-2. В поле **Domain** укажите новый адрес Render, например:
+1. Откройте [web3forms.com](https://web3forms.com) → форма **final** (или ваша)
+2. **Settings** → в поле **Domain** укажите:
    ```
-   form-site.onrender.com
+   form-site-1-f2mo.onrender.com
    ```
-   (без `https://`)
+   (ваш URL Static Site **без** `https://`)
+3. Сохраните
 
-### Шаг 4. Проверьте
+> Если после этого всё ещё ошибка 400 — напишите в [поддержку Web3Forms](https://web3forms.com/contact) с просьбой одобрить домен `*.onrender.com`.
+
+### Шаг 4. Проверьте ключ после деплоя
+
+Откройте в браузере: `https://ваш-сайт.onrender.com/config.js`
+
+Должно быть:
+```javascript
+window.WEB3FORMS_ACCESS_KEY = "f1a9f68d-ae77-437c-bed5-f59544a867e6";
+```
+
+Если там `"1"` или другой неверный ключ — исправьте `WEB3FORMS_ACCESS_KEY` на Render и нажмите **Manual Deploy → Clear build cache & deploy**.
+
+### Шаг 5. Проверьте форму
 
 Откройте URL Static Site, отправьте форму — письмо придёт на email, указанный при регистрации Web3Forms.
 
