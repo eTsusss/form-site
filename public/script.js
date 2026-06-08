@@ -38,7 +38,13 @@ form.addEventListener('submit', async (e) => {
       body: JSON.stringify(formData),
     });
 
-    const result = await response.json();
+    let result;
+    try {
+      result = await response.json();
+    } catch {
+      showMessage('Ошибка сервера. Попробуйте позже.', 'error');
+      return;
+    }
 
     if (result.success) {
       showMessage(result.message, 'success');

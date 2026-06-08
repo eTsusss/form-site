@@ -12,16 +12,42 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 function createTransporter() {
-  const port = Number(process.env.SMTP_PORT) || 587;
+  const port = Number(process.env.SMTP_PORT) || 465;
+  const isSecure = port === 465;
+
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port,
-    secure: port === 465,
+    secure: isSecure,
+    requireTLS: !isSecure,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
+    connectionTimeout: 20000,
+    greetingTimeout: 20000,
+    socketTimeout: 20000,
+    tls: {
+      minVersion: 'TLSv1.2',
+    },
   });
+}
+
+function getSmtpErrorMessage(err) {
+  const msg = err?.message || '';
+  const response = err?.response || '';
+
+  if (response.includes('535') || msg.includes('535')) {
+    return 'Mail.ru требует пароль для внешнего приложения. Создайте его в настройках почты и обновите SMTP_PASS на Render.';
+  }
+  if (msg.includes('EAUTH') || msg.includes('Authentication')) {
+    return 'Неверный логин или пароль SMTP. Проверьте SMTP_USER и SMTP_PASS на Render.';
+  }
+  if (msg.includes('ETIMEOUT') || msg.includes('ETIMEDOUT')) {
+    return 'Таймаут подключения к почтовому серверу. Попробуйте ещё раз через минуту.';
+  }
+
+  return 'Не удалось отправить заявку. Проверьте настройки почты на Render.';
 }
 
 function validateForm(data) {
@@ -86,9 +112,10 @@ app.post('/api/submit', async (req, res) => {
     res.json({ success: true, message: 'Заявка успешно отправлена!' });
   } catch (err) {
     console.error('Ошибка отправки email:', err.message);
+    if (err.response) console.error('SMTP response:', err.response);
     res.status(500).json({
       success: false,
-      errors: ['Не удалось отправить заявку. Попробуйте позже.'],
+      errors: [getSmtpErrorMessage(err)],
     });
   }
 });
