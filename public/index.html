@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Оставить заявку</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page">
+    <section class="card">
+      <header class="card__header">
+        <h1>Оставить заявку</h1>
+        <p>Заполните форму — мы свяжемся с вами в ближайшее время</p>
+      </header>
+
+      <form id="requestForm" class="form" novalidate>
+        <div class="field">
+          <label for="company">Название компании <span class="required">*</span></label>
+          <input type="text" id="company" name="company" required placeholder="ООО «Пример»">
+        </div>
+
+        <div class="field">
+          <label for="contact">Контактное лицо <span class="required">*</span></label>
+          <input type="text" id="contact" name="contact" required placeholder="Иван Иванов">
+        </div>
+
+        <div class="field">
+          <label for="phone">Номер телефона <span class="required">*</span></label>
+          <input type="tel" id="phone" name="phone" required placeholder="+7 (999) 123-45-67">
+        </div>
+
+        <div class="field">
+          <label for="area">Желаемая площадь <span class="required">*</span></label>
+          <input type="text" id="area" name="area" required placeholder="например, 50–100 м²">
+        </div>
+
+        <div class="field">
+          <label for="comments">Доп. комментарии</label>
+          <textarea id="comments" name="comments" rows="4" placeholder="Укажите дополнительные пожелания"></textarea>
+        </div>
+
+        <div id="formMessage" class="message" hidden></div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">
+          Отправить заявку
+        </button>
+      </form>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
