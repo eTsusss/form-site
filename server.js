@@ -50,28 +50,6 @@ function getSendErrorMessage(err) {
   return msg || 'Не удалось отправить заявку.';
 }
 
-async function sendViaWeb3Forms(formData) {
-  const response = await fetch('https://api.web3forms.com/submit', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      access_key: process.env.WEB3FORMS_ACCESS_KEY,
-      subject: `Новая заявка от ${formData.company}`,
-      from_name: 'Форма заявки',
-      'Название компании': formData.company,
-      'Контактное лицо': formData.contact,
-      'Номер телефона': formData.phone,
-      'Желаемая площадь': formData.area,
-      'Доп. комментарии': formData.comments || '—',
-    }),
-  });
-
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok || !result.success) {
-    throw new Error(result.message || 'Ошибка Web3Forms');
-  }
-}
-
 async function sendViaBrevo(mailOptions) {
   const senderEmail = process.env.SENDER_EMAIL || process.env.RECIPIENT_EMAIL;
 
@@ -98,9 +76,6 @@ async function sendViaBrevo(mailOptions) {
 }
 
 async function sendEmail(mailOptions, formData) {
-  if (process.env.WEB3FORMS_ACCESS_KEY) {
-    return sendViaWeb3Forms(formData);
-  }
   if (process.env.BREVO_API_KEY) {
     return sendViaBrevo(mailOptions);
   }
@@ -125,6 +100,12 @@ function validateForm(data) {
   return errors;
 }
 
+app.get('/api/config', (_req, res) => {
+  res.json({
+    web3formsKey: process.env.WEB3FORMS_ACCESS_KEY || null,
+  });
+});
+
 app.post('/api/submit', async (req, res) => {
   const { company, contact, phone, area, comments } = req.body;
 
@@ -139,7 +120,7 @@ app.post('/api/submit', async (req, res) => {
     process.env.RECIPIENT_EMAIL && process.env.SMTP_USER && process.env.SMTP_PASS
   );
 
-  if (!hasWeb3Forms && !hasBrevo && !hasSmtp) {
+  if (!hasBrevo && !hasSmtp) {
     return res.status(500).json({
       success: false,
       errors: ['Сервер не настроен. Добавьте WEB3FORMS_ACCESS_KEY (см. README).'],
