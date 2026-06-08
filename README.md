@@ -68,13 +68,11 @@ npm start
 
 | Key | Value |
 |-----|-------|
-| `RECIPIENT_EMAIL` | `runatex.doc@mail.ru` |
-| `BREVO_API_KEY` | API-ключ из Brevo (см. ниже) |
-| `SENDER_EMAIL` | `runatex.doc@mail.ru` |
+| `WEB3FORMS_ACCESS_KEY` | ключ с web3forms.com (см. ниже) |
 
 > **Важно:** `PORT` на Render задаётся автоматически — не добавляйте его вручную.
 
-> **Почему не SMTP?** Бесплатный Render [блокирует порты 25, 465 и 587](https://render.com/docs/free#other-limitations) — Mail.ru SMTP с бесплатного плана не работает, даже с правильным паролем приложения. Используйте Brevo API (HTTPS, бесплатно 300 писем/день).
+> **Почему не SMTP?** Бесплатный Render [блокирует порты 25, 465 и 587](https://render.com/docs/free#other-limitations) — Mail.ru SMTP с бесплатного плана не работает. Используйте Web3Forms (HTTPS, без данных компании).
 
 6. Нажмите **Create Web Service**.
 
@@ -99,16 +97,26 @@ https://form-site-xxxx.onrender.com
 
 После `git push` в репозиторий Render автоматически пересоберёт и задеплоит проект.
 
-## Настройка Brevo (для Render)
+## Настройка Web3Forms (рекомендуется, без данных компании)
 
-1. Зарегистрируйтесь на [brevo.com](https://www.brevo.com) (бесплатно).
-2. **Настройки → Отправители** → добавьте и подтвердите `runatex.doc@mail.ru` (придёт письмо с ссылкой).
-3. **SMTP & API → API Keys** → создайте ключ.
-4. Добавьте на Render:
-   - `BREVO_API_KEY` = ваш ключ
-   - `SENDER_EMAIL` = `runatex.doc@mail.ru`
-   - `RECIPIENT_EMAIL` = `runatex.doc@mail.ru`
-5. Дождитесь перезапуска сервиса и отправьте тестовую заявку.
+1. Откройте [web3forms.com](https://web3forms.com).
+2. Введите `runatex.doc@mail.ru` → на почту придёт **Access Key**.
+3. На Render → **Environment** → добавьте:
+   - `WEB3FORMS_ACCESS_KEY` = ваш ключ
+4. Дождитесь перезапуска и отправьте тестовую заявку.
+
+Бесплатно: 250 заявок в месяц. Нужен только email, без ИНН, названия компании и т.п.
+
+## Другие альтернативы
+
+| Сервис | Нужна компания? | Бесплатно | Примечание |
+|--------|-----------------|-----------|------------|
+| [Web3Forms](https://web3forms.com) | Нет | 250/мес | **Рекомендуем** — уже встроено в проект |
+| [Formspree](https://formspree.io) | Нет | 50/мес | Регистрация по email, свой form ID |
+| [FormSubmit](https://formsubmit.co) | Нет | Да | Совсем без регистрации, но меньше контроля |
+| [Resend](https://resend.com) | Частично | 100/день | Нужно подтвердить email отправителя |
+| Brevo | Да | 300/день | Требует данные компании |
+| Платный Render | — | от $7/мес | Тогда работает Mail.ru SMTP напрямую |
 
 ## Настройка Mail.ru (только для локального запуска)
 

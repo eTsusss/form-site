@@ -38,7 +38,7 @@ function getSendErrorMessage(err) {
   const response = err?.response || '';
 
   if (msg.includes('ETIMEDOUT') || msg.includes('ETIMEOUT') || msg.includes('ECONNREFUSED')) {
-    return 'Render на бесплатном плане блокирует SMTP. Добавьте BREVO_API_KEY в Environment Variables на Render (см. README).';
+    return 'Render на бесплатном плане блокирует SMTP. Добавьте WEB3FORMS_ACCESS_KEY на Render (см. README).';
   }
   if (response.includes('535') || msg.includes('535')) {
     return 'Mail.ru требует пароль для внешнего приложения. Создайте его в настройках почты.';
@@ -48,6 +48,28 @@ function getSendErrorMessage(err) {
   }
 
   return msg || 'Не удалось отправить заявку.';
+}
+
+async function sendViaWeb3Forms(formData) {
+  const response = await fetch('https://api.web3forms.com/submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      access_key: process.env.WEB3FORMS_ACCESS_KEY,
+      subject: `Новая заявка от ${formData.company}`,
+      from_name: 'Форма заявки',
+      'Название компании': formData.company,
+      'Контактное лицо': formData.contact,
+      'Номер телефона': formData.phone,
+      'Желаемая площадь': formData.area,
+      'Доп. комментарии': formData.comments || '—',
+    }),
+  });
+
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || 'Ошибка Web3Forms');
+  }
 }
 
 async function sendViaBrevo(mailOptions) {
@@ -75,7 +97,10 @@ async function sendViaBrevo(mailOptions) {
   }
 }
 
-async function sendEmail(mailOptions) {
+async function sendEmail(mailOptions, formData) {
+  if (process.env.WEB3FORMS_ACCESS_KEY) {
+    return sendViaWeb3Forms(formData);
+  }
   if (process.env.BREVO_API_KEY) {
     return sendViaBrevo(mailOptions);
   }
@@ -108,17 +133,26 @@ app.post('/api/submit', async (req, res) => {
     return res.status(400).json({ success: false, errors });
   }
 
+  const hasWeb3Forms = Boolean(process.env.WEB3FORMS_ACCESS_KEY);
   const hasBrevo = Boolean(process.env.BREVO_API_KEY && process.env.RECIPIENT_EMAIL);
   const hasSmtp = Boolean(
     process.env.RECIPIENT_EMAIL && process.env.SMTP_USER && process.env.SMTP_PASS
   );
 
-  if (!hasBrevo && !hasSmtp) {
+  if (!hasWeb3Forms && !hasBrevo && !hasSmtp) {
     return res.status(500).json({
       success: false,
-      errors: ['Сервер не настроен. Добавьте BREVO_API_KEY или SMTP-переменные.'],
+      errors: ['Сервер не настроен. Добавьте WEB3FORMS_ACCESS_KEY (см. README).'],
     });
   }
+
+  const formData = {
+    company: company.trim(),
+    contact: contact.trim(),
+    phone: phone.trim(),
+    area: area.trim(),
+    comments: comments?.trim() || '—',
+  };
 
   const mailOptions = {
     from: `"Форма заявки" <${process.env.SMTP_USER}>`,
@@ -146,7 +180,7 @@ app.post('/api/submit', async (req, res) => {
   };
 
   try {
-    await sendEmail(mailOptions);
+    await sendEmail(mailOptions, formData);
     res.json({ success: true, message: 'Заявка успешно отправлена!' });
   } catch (err) {
     console.error('Ошибка отправки email:', err.message);
