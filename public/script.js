@@ -52,12 +52,12 @@ function validateClientForm(data) {
   return errors;
 }
 
-async function sendViaWeb3Forms(formData) {
+async function sendViaWeb3Forms(formData, accessKey) {
   const response = await fetch('https://api.web3forms.com/submit', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      access_key: key,
+      access_key: accessKey,
       subject: `Новая заявка от ${formData.company}`,
       from_name: 'Форма заявки',
       name: formData.contact,
@@ -114,7 +114,7 @@ form.addEventListener('submit', async (e) => {
   try {
     const key = await getWeb3FormsKey();
     if (key) {
-      await sendViaWeb3Forms(formData);
+      await sendViaWeb3Forms(formData, key);
       showMessage('Заявка успешно отправлена!', 'success');
       form.reset();
     } else {
