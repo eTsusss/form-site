@@ -33,21 +33,55 @@ function createTransporter() {
   });
 }
 
-function getSmtpErrorMessage(err) {
+function getSendErrorMessage(err) {
   const msg = err?.message || '';
   const response = err?.response || '';
 
+  if (msg.includes('ETIMEDOUT') || msg.includes('ETIMEOUT') || msg.includes('ECONNREFUSED')) {
+    return 'Render на бесплатном плане блокирует SMTP. Добавьте BREVO_API_KEY в Environment Variables на Render (см. README).';
+  }
   if (response.includes('535') || msg.includes('535')) {
-    return 'Mail.ru требует пароль для внешнего приложения. Создайте его в настройках почты и обновите SMTP_PASS на Render.';
+    return 'Mail.ru требует пароль для внешнего приложения. Создайте его в настройках почты.';
   }
   if (msg.includes('EAUTH') || msg.includes('Authentication')) {
-    return 'Неверный логин или пароль SMTP. Проверьте SMTP_USER и SMTP_PASS на Render.';
-  }
-  if (msg.includes('ETIMEOUT') || msg.includes('ETIMEDOUT')) {
-    return 'Таймаут подключения к почтовому серверу. Попробуйте ещё раз через минуту.';
+    return 'Неверный логин или пароль SMTP.';
   }
 
-  return 'Не удалось отправить заявку. Проверьте настройки почты на Render.';
+  return msg || 'Не удалось отправить заявку.';
+}
+
+async function sendViaBrevo(mailOptions) {
+  const senderEmail = process.env.SENDER_EMAIL || process.env.RECIPIENT_EMAIL;
+
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      accept: 'application/json',
+      'api-key': process.env.BREVO_API_KEY,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      sender: { name: 'Форма заявки', email: senderEmail },
+      to: [{ email: process.env.RECIPIENT_EMAIL }],
+      subject: mailOptions.subject,
+      textContent: mailOptions.text,
+      htmlContent: mailOptions.html,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || `Ошибка Brevo: ${response.status}`);
+  }
+}
+
+async function sendEmail(mailOptions) {
+  if (process.env.BREVO_API_KEY) {
+    return sendViaBrevo(mailOptions);
+  }
+
+  const transporter = createTransporter();
+  return transporter.sendMail(mailOptions);
 }
 
 function validateForm(data) {
@@ -74,10 +108,15 @@ app.post('/api/submit', async (req, res) => {
     return res.status(400).json({ success: false, errors });
   }
 
-  if (!process.env.RECIPIENT_EMAIL || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+  const hasBrevo = Boolean(process.env.BREVO_API_KEY && process.env.RECIPIENT_EMAIL);
+  const hasSmtp = Boolean(
+    process.env.RECIPIENT_EMAIL && process.env.SMTP_USER && process.env.SMTP_PASS
+  );
+
+  if (!hasBrevo && !hasSmtp) {
     return res.status(500).json({
       success: false,
-      errors: ['Сервер не настроен. Заполните файл .env'],
+      errors: ['Сервер не настроен. Добавьте BREVO_API_KEY или SMTP-переменные.'],
     });
   }
 
@@ -107,15 +146,14 @@ app.post('/api/submit', async (req, res) => {
   };
 
   try {
-    const transporter = createTransporter();
-    await transporter.sendMail(mailOptions);
+    await sendEmail(mailOptions);
     res.json({ success: true, message: 'Заявка успешно отправлена!' });
   } catch (err) {
     console.error('Ошибка отправки email:', err.message);
     if (err.response) console.error('SMTP response:', err.response);
     res.status(500).json({
       success: false,
-      errors: [getSmtpErrorMessage(err)],
+      errors: [getSendErrorMessage(err)],
     });
   }
 });

@@ -69,12 +69,12 @@ npm start
 | Key | Value |
 |-----|-------|
 | `RECIPIENT_EMAIL` | `runatex.doc@mail.ru` |
-| `SMTP_HOST` | `smtp.mail.ru` |
-| `SMTP_PORT` | `465` |
-| `SMTP_USER` | `runatex.doc@mail.ru` |
-| `SMTP_PASS` | пароль от почты Mail.ru |
+| `BREVO_API_KEY` | API-ключ из Brevo (см. ниже) |
+| `SENDER_EMAIL` | `runatex.doc@mail.ru` |
 
 > **Важно:** `PORT` на Render задаётся автоматически — не добавляйте его вручную.
+
+> **Почему не SMTP?** Бесплатный Render [блокирует порты 25, 465 и 587](https://render.com/docs/free#other-limitations) — Mail.ru SMTP с бесплатного плана не работает, даже с правильным паролем приложения. Используйте Brevo API (HTTPS, бесплатно 300 писем/день).
 
 6. Нажмите **Create Web Service**.
 
@@ -99,11 +99,23 @@ https://form-site-xxxx.onrender.com
 
 После `git push` в репозиторий Render автоматически пересоберёт и задеплоит проект.
 
-## Настройка Mail.ru
+## Настройка Brevo (для Render)
 
-1. Войдите в почту runatex.doc@mail.ru.
-2. **Настройки → Пароль и безопасность → Пароли для внешних приложений** — создайте пароль, если обычный не подходит.
-3. Используйте этот пароль в `SMTP_PASS` (локально в `.env`, на Render — в Environment Variables).
+1. Зарегистрируйтесь на [brevo.com](https://www.brevo.com) (бесплатно).
+2. **Настройки → Отправители** → добавьте и подтвердите `runatex.doc@mail.ru` (придёт письмо с ссылкой).
+3. **SMTP & API → API Keys** → создайте ключ.
+4. Добавьте на Render:
+   - `BREVO_API_KEY` = ваш ключ
+   - `SENDER_EMAIL` = `runatex.doc@mail.ru`
+   - `RECIPIENT_EMAIL` = `runatex.doc@mail.ru`
+5. Дождитесь перезапуска сервиса и отправьте тестовую заявку.
+
+## Настройка Mail.ru (только для локального запуска)
+
+SMTP работает локально, но **не на бесплатном Render**.
+
+1. **Настройки → Пароль и безопасность → Пароли для внешних приложений** — создайте пароль.
+2. Укажите его в `SMTP_PASS` в файле `.env`.
 
 | Параметр | Значение |
 |----------|----------|
