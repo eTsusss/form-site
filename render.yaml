@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: form-site
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: WEB3FORMS_ACCESS_KEY
+        sync: false

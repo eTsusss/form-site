@@ -2,19 +2,6 @@ const form = document.getElementById('requestForm');
 const messageEl = document.getElementById('formMessage');
 const submitBtn = document.getElementById('submitBtn');
 
-let web3formsKey = undefined;
-
-async function getWeb3FormsKey() {
-  if (web3formsKey !== undefined) return web3formsKey;
-  try {
-    const config = await fetch('/api/config').then((r) => r.json());
-    web3formsKey = config.web3formsKey || null;
-  } catch {
-    web3formsKey = null;
-  }
-  return web3formsKey;
-}
-
 function showMessage(text, type) {
   messageEl.textContent = text;
   messageEl.className = `message ${type}`;
@@ -77,30 +64,15 @@ async function sendViaWeb3Forms(formData, accessKey) {
   }
 }
 
-async function sendViaServer(formData) {
-  const response = await fetch('/api/submit', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(formData),
-  });
-
-  let result;
-  try {
-    result = await response.json();
-  } catch {
-    throw new Error('Ошибка сервера. Попробуйте позже.');
-  }
-
-  if (!result.success) {
-    throw new Error(result.errors?.join('. ') || 'Произошла ошибка');
-  }
-
-  return result.message;
-}
-
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   hideMessage();
+
+  const accessKey = window.WEB3FORMS_ACCESS_KEY;
+  if (!accessKey) {
+    showMessage('Не настроен ключ Web3Forms (config.js)', 'error');
+    return;
+  }
 
   const formData = getFormData();
   const errors = validateClientForm(formData);
@@ -112,16 +84,9 @@ form.addEventListener('submit', async (e) => {
   setLoading(true);
 
   try {
-    const key = await getWeb3FormsKey();
-    if (key) {
-      await sendViaWeb3Forms(formData, key);
-      showMessage('Заявка успешно отправлена!', 'success');
-      form.reset();
-    } else {
-      const message = await sendViaServer(formData);
-      showMessage(message, 'success');
-      form.reset();
-    }
+    await sendViaWeb3Forms(formData, accessKey);
+    showMessage('Заявка успешно отправлена!', 'success');
+    form.reset();
   } catch (err) {
     showMessage(err.message || 'Не удалось отправить заявку.', 'error');
   } finally {

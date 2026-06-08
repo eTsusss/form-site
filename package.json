@@ -1,18 +1,15 @@
 {
   "name": "contact-form",
-  "version": "1.0.0",
-  "description": "Форма заявки с отправкой на email",
-  "main": "server.js",
+  "version": "2.0.0",
+  "description": "Статическая форма заявки с отправкой на email через Web3Forms",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "build": "node build.js",
+    "preview": "npm run build && npx --yes serve dist -p 3000"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "nodemailer": "^6.9.16"
+    "dotenv": "^16.4.7"
   }
 }
